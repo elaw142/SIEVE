@@ -229,7 +229,7 @@ def parse_prompt_artists(prompt):
 
 
 def best_artist_match(name):
-    payload = search_artists(name, 5)
+    payload = search_artists(name, 3)
     artists = payload.get("artists", {}).get("items") or []
     if not artists:
         return None
@@ -246,8 +246,8 @@ def artist_top_tracks(artist_id):
     return payload.get("tracks") or []
 
 
-def artist_seed_tracks(artist_id=None, artist_name="", limit=12):
-    if artist_id:
+def artist_seed_tracks(artist_id=None, artist_name="", limit=12, use_top_tracks=True):
+    if artist_id and use_top_tracks:
         try:
             tracks = artist_top_tracks(artist_id)
             if tracks:
@@ -256,7 +256,7 @@ def artist_seed_tracks(artist_id=None, artist_name="", limit=12):
             pass
     if not artist_name:
         return []
-    payload = search_tracks(f'artist:"{artist_name}"', limit, variance=True, min_popularity=0)
+    payload = search_tracks(f'artist:"{artist_name}"', limit, variance=False, min_popularity=0)
     return payload.get("tracks", {}).get("items") or []
 
 
@@ -319,12 +319,12 @@ def search_track_variants(queries, limit=20, variance=True, shuffle_queries=True
     return {"tracks": {"items": items[:total_limit], "limit": total_limit, "offset": 0}}
 
 
-def balanced_search_variants(queries, limit=20, min_popularity=0):
+def balanced_search_variants(queries, limit=20, min_popularity=0, variance=True, max_queries=8):
     total_limit = clamp_total_limit(limit)
     items = []
-    usable_queries = [query for query in queries if query.strip()]
+    usable_queries = [query for query in queries if query.strip()][:max_queries]
     for query in usable_queries:
-        payload = search_tracks(query, min(10, total_limit), variance=True, min_popularity=min_popularity)
+        payload = search_tracks(query, min(10, total_limit), variance=variance, min_popularity=min_popularity)
         query_items = payload.get("tracks", {}).get("items") or []
         random.shuffle(query_items)
         items.extend(query_items[: max(2, total_limit // max(len(usable_queries), 1))])
@@ -332,7 +332,7 @@ def balanced_search_variants(queries, limit=20, min_popularity=0):
 
     if len(items) < total_limit:
         for query in usable_queries:
-            payload = search_tracks(query, total_limit, variance=True, min_popularity=min_popularity)
+            payload = search_tracks(query, total_limit, variance=variance, min_popularity=min_popularity)
             items.extend(payload.get("tracks", {}).get("items") or [])
             items = unique_tracks(items, min_popularity)
             if len(items) >= total_limit:
@@ -480,7 +480,28 @@ def vibe_plan(prompt):
 def vibe_search(prompt, limit=30):
     total_limit = clamp_total_limit(limit)
     prompt_artists = parse_prompt_artists(prompt)
-    plan = {"seedArtists": prompt_artists, "queryVariants": forgiving_queries(prompt)[:6]} if len(prompt_artists) >= 2 else vibe_plan(prompt).get("plan") or {}
+    if len(prompt_artists) >= 2:
+        items = []
+        matched_artists = []
+        per_artist_limit = max(3, min(8, (total_limit // max(len(prompt_artists), 1)) + 2))
+        for artist_name in prompt_artists[:10]:
+            artist = best_artist_match(artist_name)
+            if not artist:
+                continue
+            matched_artists.append({"id": artist.get("id"), "name": artist.get("name")})
+            tracks = artist_seed_tracks(None, artist.get("name", artist_name), per_artist_limit, use_top_tracks=False)
+            random.shuffle(tracks)
+            items.extend(tracks[:per_artist_limit])
+
+        tracks = unique_tracks(items)
+        random.shuffle(tracks)
+        return {
+            "plan": {"seedArtists": prompt_artists},
+            "matchedArtists": matched_artists,
+            "tracks": {"items": tracks[:total_limit], "limit": total_limit, "offset": 0},
+        }
+
+    plan = vibe_plan(prompt).get("plan") or {}
     plan_artists = plan.get("seedArtists") if isinstance(plan.get("seedArtists"), list) else []
     artist_names = []
     for name in [*prompt_artists, *plan_artists]:
@@ -517,7 +538,7 @@ def vibe_search(prompt, limit=30):
     queries.extend(forgiving_queries(prompt)[:4])
 
     if queries:
-        items.extend(balanced_search_variants(queries, max(total_limit, 30), min_popularity=8))
+        items.extend(balanced_search_variants(queries, max(total_limit, 30), min_popularity=8, variance=False, max_queries=6))
 
     tracks = unique_tracks(items)
     random.shuffle(tracks)
