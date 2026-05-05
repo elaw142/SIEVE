@@ -6,7 +6,7 @@ export default function Header({ user, loading, onConnect, onLogout }) {
       <div className="mx-auto grid max-w-[1500px] gap-3 px-4 py-4 lg:grid-cols-[1fr_auto] lg:px-6">
         <div>
           <p className="font-display text-7xl leading-none tracking-normal">
-            SEIVE
+            SIEVE
           </p>
           <p className="text-xs uppercase text-muted">
             Spotify duplicate removal desk
