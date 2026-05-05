@@ -69,6 +69,7 @@ export function useSpotify() {
         method: "POST",
         body: JSON.stringify({ prompt, limit }),
       }),
+    vibeSearchJob: (jobId) => api(`/api/vibe-search/${jobId}`),
     recommendations: (params) => api(`/api/recommendations?${new URLSearchParams(params).toString()}`),
     createPlaylist: (payload) =>
       api("/api/playlist/create", {

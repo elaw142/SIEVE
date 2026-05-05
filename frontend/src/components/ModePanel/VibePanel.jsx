@@ -4,8 +4,8 @@ import { normalizeTrack } from "../../hooks/usePlaylistWorkspace.js";
 
 const loadingSteps = [
   "Reading the prompt...",
-  "Checking Spotify candidates...",
-  "Balancing the results...",
+  "Search job started...",
+  "Waiting for Spotify...",
 ];
 
 export default function VibePanel({ spotify, workspace }) {
@@ -34,7 +34,8 @@ export default function VibePanel({ spotify, workspace }) {
     workspace.setLoadingMessage(loadingSteps[0]);
     setLastSearch(null);
     try {
-      const payload = await spotify.vibeSearch(prompt, workspace.params.limit);
+      const started = await spotify.vibeSearch(prompt, workspace.params.limit);
+      const payload = await waitForJob(started.id);
       workspace.setResults((payload.tracks?.items || []).map(normalizeTrack));
       if (payload.rateLimited) {
         const retryText = payload.retryAfter ? ` Spotify says to wait about ${payload.retryAfter} seconds before trying again.` : " Spotify is cooling this app down for a moment.";
@@ -48,6 +49,18 @@ export default function VibePanel({ spotify, workspace }) {
     } catch (err) {
       workspace.fail(err.message);
     }
+  };
+
+  const waitForJob = async (jobId) => {
+    if (!jobId) throw new Error("Vibe search did not start.");
+    for (let attempt = 0; attempt < 80; attempt += 1) {
+      await new Promise((resolve) => window.setTimeout(resolve, attempt < 3 ? 700 : 1500));
+      const job = await spotify.vibeSearchJob(jobId);
+      if (job.message) workspace.setLoadingMessage(job.message);
+      if (job.status === "complete" || job.status === "rate_limited") return job.result;
+      if (job.status === "error") throw new Error(job.message || job.error?.error || "Vibe search failed.");
+    }
+    throw new Error("Vibe search is still running. Try again in a moment.");
   };
 
   return (
@@ -76,7 +89,7 @@ export default function VibePanel({ spotify, workspace }) {
             <span />
           </div>
           <p className="font-display text-3xl">{loadingSteps[loadingStep]}</p>
-          <p>Spotify can throttle bursts of searches, so this now asks for a smaller first pass.</p>
+          <p>The search runs in the background now, so slow Spotify responses will not break the page.</p>
         </div>
       )}
       {lastSearch && lastSearch.count > 0 && (
