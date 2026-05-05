@@ -246,6 +246,20 @@ def artist_top_tracks(artist_id):
     return payload.get("tracks") or []
 
 
+def artist_seed_tracks(artist_id=None, artist_name="", limit=12):
+    if artist_id:
+        try:
+            tracks = artist_top_tracks(artist_id)
+            if tracks:
+                return tracks[:limit]
+        except SpotifyError:
+            pass
+    if not artist_name:
+        return []
+    payload = search_tracks(f'artist:"{artist_name}"', limit, variance=True, min_popularity=0)
+    return payload.get("tracks", {}).get("items") or []
+
+
 def unique_tracks(items, min_popularity=0):
     seen = set()
     tracks = []
@@ -376,8 +390,9 @@ def recommendations(params):
     queries = []
 
     if artist_ids:
-        for artist_id in artist_ids[:8]:
-            items.extend(artist_top_tracks(artist_id))
+        for index, artist_id in enumerate(artist_ids[:8]):
+            artist_name = artist_names[index] if index < len(artist_names) else ""
+            items.extend(artist_seed_tracks(artist_id, artist_name, 12))
         random.shuffle(items)
 
     if genres and artist_names:
@@ -479,7 +494,7 @@ def vibe_search(prompt, limit=30):
         if not artist:
             continue
         matched_artists.append({"id": artist.get("id"), "name": artist.get("name")})
-        top_tracks = artist_top_tracks(artist["id"])
+        top_tracks = artist_seed_tracks(artist["id"], artist.get("name", ""), 12)
         random.shuffle(top_tracks)
         items.extend(top_tracks[:4])
 
