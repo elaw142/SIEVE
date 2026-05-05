@@ -1,30 +1,24 @@
 services:
-  playlist-backend:
+  tracksieve-backend:
     build: ./backend
-    container_name: playlist-backend
+    container_name: tracksieve-backend
     environment:
       - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
       - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
       - SPOTIFY_REDIRECT_URI=${SPOTIFY_REDIRECT_URI}
       - FLASK_SECRET_KEY=${FLASK_SECRET_KEY}
       - AUTH_SUCCESS_REDIRECT=${AUTH_SUCCESS_REDIRECT:-/}
-      - FRONTEND_ORIGIN=${FRONTEND_ORIGIN:-https://setbuilder.emlw.dev}
+      - FRONTEND_ORIGIN=${FRONTEND_ORIGIN:-https://tracksieve.emlw.dev}
       - SESSION_COOKIE_SECURE=${SESSION_COOKIE_SECURE:-true}
-      - SPOTIFY_MARKET=${SPOTIFY_MARKET:-NZ}
-      - SPOTIFY_TIMEOUT=${SPOTIFY_TIMEOUT:-8}
-      - OLLAMA_URL=${OLLAMA_URL:-http://host.docker.internal:11434}
-      - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen3:4b-instruct}
-      - OLLAMA_KEEP_ALIVE=${OLLAMA_KEEP_ALIVE:-2m}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - SPOTIFY_TIMEOUT=${SPOTIFY_TIMEOUT:-12}
     networks:
       - web
 
-  playlist-frontend:
+  tracksieve-frontend:
     build: ./frontend
-    container_name: playlist-frontend
+    container_name: tracksieve-frontend
     depends_on:
-      - playlist-backend
+      - tracksieve-backend
     ports:
       - "127.0.0.1:${FRONTEND_PORT:-8094}:80"
     networks:

@@ -18,7 +18,6 @@ async function api(path, options = {}) {
 
 export function useSpotify() {
   const [user, setUser] = useState(null);
-  const [genres, setGenres] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -40,16 +39,8 @@ export function useSpotify() {
     refreshMe();
   }, [refreshMe]);
 
-  useEffect(() => {
-    if (!user) return;
-    api("/api/genres")
-      .then((payload) => setGenres(payload.genres || []))
-      .catch(() => setGenres([]));
-  }, [user]);
-
   return {
     user,
-    genres,
     loading,
     error,
     connect: () => {
@@ -59,22 +50,12 @@ export function useSpotify() {
       await api("/api/auth/logout", { method: "POST" });
       setUser(null);
     },
-    searchTracks: (query, limit = 30, variance = false) =>
-      api(`/api/search?q=${encodeURIComponent(query)}&limit=${limit}&variance=${variance}`),
-    generousSearchTracks: (query, limit = 30) => api(`/api/search?q=${encodeURIComponent(query)}&limit=${limit}&generous=true`),
-    searchArtists: (query, limit = 10) => api(`/api/artists/search?q=${encodeURIComponent(query)}&limit=${limit}`),
-    eraSearch: (params) => api(`/api/era-search?${new URLSearchParams(params).toString()}`),
-    vibeSearch: (prompt, limit = 30) =>
-      api("/api/vibe-search", {
+    playlists: () => api("/api/playlists"),
+    duplicates: (playlistId, mode = "exact") => api(`/api/playlists/${playlistId}/duplicates?mode=${mode}`),
+    removeDuplicates: (playlistId, mode = "exact") =>
+      api(`/api/playlists/${playlistId}/remove-duplicates`, {
         method: "POST",
-        body: JSON.stringify({ prompt, limit }),
-      }),
-    vibeSearchJob: (jobId) => api(`/api/vibe-search/${jobId}`),
-    recommendations: (params) => api(`/api/recommendations?${new URLSearchParams(params).toString()}`),
-    createPlaylist: (payload) =>
-      api("/api/playlist/create", {
-        method: "POST",
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ mode }),
       }),
   };
 }

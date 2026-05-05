@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_DIR=/opt/setbuilder
-REPO_URL=https://github.com/elaw142/SETBUILDER.git
+APP_DIR=/opt/tracksieve
+REPO_URL=https://github.com/elaw142/TRACKSIEVE.git
 
 if ! command -v git >/dev/null 2>&1; then
   sudo dnf install -y git

@@ -127,6 +127,16 @@ textarea {
   text-transform: uppercase;
 }
 
+.action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.danger-button {
+  background: #ff2d78;
+  color: #111;
+}
+
 .icon-button {
   display: inline-flex;
   align-items: center;
@@ -213,6 +223,60 @@ textarea {
 
 .track-row:hover .preview-button {
   border-color: #f2efe6;
+}
+
+.report-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.report-strip span {
+  border: 2px solid #111;
+  background: #ccff00;
+  padding: 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.duplicate-group {
+  display: grid;
+  gap: 0.35rem;
+  border: 2px solid #111;
+  padding: 0.5rem;
+}
+
+.duplicate-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 2px solid #111;
+  padding: 0.25rem 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.occurrence-row {
+  display: grid;
+  grid-template-columns: 2.3rem 3rem minmax(0, 1fr) 2.3rem;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 4.2rem;
+  background: #ffe1ec;
+  padding: 0.45rem;
+}
+
+.occurrence-row.keep {
+  background: #e8ffd1;
+}
+
+.occurrence-row img {
+  width: 3rem;
+  height: 3rem;
+  border: 2px solid #111;
+  object-fit: cover;
 }
 
 .tray-list {
